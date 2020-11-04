@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"testing"
 )
 
 // This example demonstrates basic usage of this library.
@@ -12,7 +13,7 @@ import (
 //   * Homomorphic cipher text addition
 //   * Homomorphic addition with constant
 //   * Homomorphic multiplication with constant
-func main() {
+func TestAdd(t *testing.T) {
 	// Generate a 128-bit private key.
 	privKey, err := GenerateKey(rand.Reader, 128)
 	if err != nil {
@@ -46,9 +47,19 @@ func main() {
 		return
 	}
 
+	// Subtract the encrypted integers 20 and 15 together.
+	subM20M15 := SubCipher(&privKey.PublicKey, c20, c15)
+	decryptedAddition, err := Decrypt(privKey, subM20M15)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Result of 20-15 after decryption: ",
+		new(big.Int).SetBytes(decryptedAddition).String()) // 5
+
 	// Add the encrypted integers 15 and 20 together.
 	plusM16M20 := AddCipher(&privKey.PublicKey, c15, c20)
-	decryptedAddition, err := Decrypt(privKey, plusM16M20)
+	decryptedAddition, err = Decrypt(privKey, plusM16M20)
 	if err != nil {
 		fmt.Println(err)
 		return

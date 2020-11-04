@@ -179,6 +179,7 @@ func AddCipher(pubKey *PublicKey, cipher1, cipher2 []byte) []byte {
 	).Bytes()
 }
 
+
 // Add homomorphically adds a passed constant to the encrypted integer
 // (our cipher text). We do this by multiplying the constant with our
 // ciphertext. Upon decryption, the resulting plain text will be the sum of
@@ -192,6 +193,15 @@ func Add(pubKey *PublicKey, cipher, constant []byte) []byte {
 		new(big.Int).Mul(c, new(big.Int).Exp(pubKey.G, x, pubKey.NSquared)),
 		pubKey.NSquared,
 	).Bytes()
+}
+
+func SubCipher(pubKey *PublicKey, cipher1, cipher2 []byte) []byte{
+	x := new(big.Int).SetBytes(cipher1)
+	y := new(big.Int).SetBytes(cipher2)
+
+	neg := new(big.Int).ModInverse(y, pubKey.NSquared)
+	m := new(big.Int).Mul(x, neg)
+	return new(big.Int).Mod(m, pubKey.NSquared).Bytes()
 }
 
 // Mul homomorphically multiplies an encrypted integer (cipher text) by a
