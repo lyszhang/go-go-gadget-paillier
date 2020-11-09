@@ -2,6 +2,7 @@ package paillier
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"testing"
@@ -86,4 +87,43 @@ func TestAdd(t *testing.T) {
 	}
 	fmt.Println("Result of 15*10 after decryption: ",
 		new(big.Int).SetBytes(decryptedMul).String()) // 150
+}
+
+
+
+// This example demonstrates basic usage of this library.
+// Features shown:
+//   * Encrypt/Decrypt
+//   * Homomorphic cipher text addition
+//   * Homomorphic addition with constant
+//   * Homomorphic multiplication with constant
+func TestAddHE(t *testing.T) {
+	// Generate a 128-bit private key.
+	privKey, err := GenerateKey(rand.Reader, 128)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Encrypt the number "15".
+	m15 := new(big.Int).SetInt64(15)
+	c15, err := Encrypt(&privKey.PublicKey, m15.Bytes())
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	pubBytes, _ := json.Marshal(privKey.PublicKey)
+	var pub PublicKey
+	json.Unmarshal(pubBytes, &pub)
+
+	// Add the encrypted integers 15 and 20 together.
+	plusM15M15 := AddCipher(&pub, c15, c15)
+	decryptedAddition, err := Decrypt(privKey, plusM15M15)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Result of 15+15 after decryption: ",
+		new(big.Int).SetBytes(decryptedAddition).String()) // 35
 }
