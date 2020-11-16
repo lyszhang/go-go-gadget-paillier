@@ -117,7 +117,7 @@ func TestAddHE(t *testing.T) {
 	var pub PublicKey
 	json.Unmarshal(pubBytes, &pub)
 
-	// Add the encrypted integers 15 and 20 together.
+	// Add the encrypted integers 15 and 15 together.
 	plusM15M15 := AddCipher(&pub, c15, c15)
 	decryptedAddition, err := Decrypt(privKey, plusM15M15)
 	if err != nil {
@@ -126,4 +126,25 @@ func TestAddHE(t *testing.T) {
 	}
 	fmt.Println("Result of 15+15 after decryption: ",
 		new(big.Int).SetBytes(decryptedAddition).String()) // 35
+
+
+	// Sub the encrypted integer 15 to plaintext constant 10.
+	subE15and10 := SubCipherWithConstant(&privKey.PublicKey, c15, new(big.Int).SetInt64(10).Bytes())
+	decryptedAddition, err = Decrypt(privKey, subE15and10)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Result of 15-10 after decryption: ",
+		new(big.Int).SetBytes(decryptedAddition).String()) // 5
+
+	// Sub the plaintext constant 20 to encrypted integer 15.
+	sub20andE15 := SubConstWithCipher(&privKey.PublicKey, new(big.Int).SetInt64(14).Bytes(), c15)
+	decryptedAddition, err = Decrypt(privKey, sub20andE15)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Result of 20-15 after decryption: ",
+		new(big.Int).SetBytes(decryptedAddition).String()) // 5
 }

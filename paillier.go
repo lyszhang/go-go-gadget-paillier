@@ -195,6 +195,37 @@ func Add(pubKey *PublicKey, cipher, constant []byte) []byte {
 	).Bytes()
 }
 
+// SubCipherWithConstant homomorphically adds a passed constant to the encrypted integer
+// (our cipher text). We do this by multiplying the constant with our
+// ciphertext. Upon decryption, the resulting plain text will be the sum of
+// the plaintext integer and the constant.
+func SubCipherWithConstant(pubKey *PublicKey, cipher, constant []byte) []byte {
+	c := new(big.Int).SetBytes(cipher)
+	x := new(big.Int).SetBytes(constant)
+
+	// c * g ^ x mod n^2
+	return new(big.Int).Mod(
+		new(big.Int).Mul(c, new(big.Int).Exp(pubKey.G, x.Neg(x), pubKey.NSquared)),
+		pubKey.NSquared,
+	).Bytes()
+}
+
+// SubConstWithCipher homomorphically adds a passed constant to the encrypted integer
+// (our cipher text). We do this by multiplying the constant with our
+// ciphertext. Upon decryption, the resulting plain text will be the sum of
+// the plaintext integer and the constant.
+func SubConstWithCipher(pubKey *PublicKey, constant, cipher []byte) []byte {
+	x := new(big.Int).SetBytes(constant)
+	c := new(big.Int).SetBytes(cipher)
+
+	neg := new(big.Int).ModInverse(c, pubKey.NSquared)
+	// neg * g ^ x mod n^2
+	return new(big.Int).Mod(
+		new(big.Int).Mul(neg, new(big.Int).Exp(pubKey.G, x, pubKey.NSquared)),
+		pubKey.NSquared,
+	).Bytes()
+}
+
 func SubCipher(pubKey *PublicKey, cipher1, cipher2 []byte) []byte{
 	x := new(big.Int).SetBytes(cipher1)
 	y := new(big.Int).SetBytes(cipher2)
