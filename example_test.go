@@ -23,7 +23,7 @@ func TestAdd(t *testing.T) {
 	}
 
 	// Encrypt the number "15".
-	m15 := new(big.Int).SetInt64(15)
+	m15 := new(big.Int).SetInt64(-15)
 	c15, err := Encrypt(&privKey.PublicKey, m15.Bytes())
 	if err != nil {
 		fmt.Println(err)

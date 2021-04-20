@@ -2,6 +2,8 @@ package paillier
 
 import (
 	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"math/big"
@@ -42,7 +44,7 @@ func GenerateKey(random io.Reader, bits int) (*PrivateKey, error) {
 
 	return &PrivateKey{
 		PublicKey: PublicKey{
-			N:        n,
+			NPub:     n,
 			NSquared: new(big.Int).Mul(n, n),
 			G:        new(big.Int).Add(n, one), // g = n + 1
 		},
@@ -75,11 +77,98 @@ type PrivateKey struct {
 	n         *big.Int
 }
 
+type privateKeySerial struct {
+	PublicKey
+	P         *big.Int
+	PP        *big.Int
+	Pminusone *big.Int
+	Q         *big.Int
+	QQ        *big.Int
+	Qminusone *big.Int
+	Pinvq     *big.Int
+	Hp        *big.Int
+	Hq        *big.Int
+	N         *big.Int
+}
+
+func NewPrivateKeySerial(p *PrivateKey) *privateKeySerial {
+	return &privateKeySerial{
+		PublicKey: p.PublicKey,
+		P:         p.p,
+		PP:        p.pp,
+		Pminusone: p.pminusone,
+		Q:         p.q,
+		QQ:        p.qq,
+		Qminusone: p.qminusone,
+		Pinvq:     p.pinvq,
+		Hp:        p.hp,
+		Hq:        p.hq,
+		N:         p.n,
+	}
+}
+
+func(p *privateKeySerial)PrivateKey() *PrivateKey {
+	return &PrivateKey{
+		PublicKey: p.PublicKey,
+		p:         p.P,
+		pp:        p.PP,
+		pminusone: p.Pminusone,
+		q:         p.Q,
+		qq:        p.QQ,
+		qminusone: p.Qminusone,
+		pinvq:     p.Pinvq,
+		hp:        p.Hp,
+		hq:        p.Hq,
+		n:         p.N,
+	}
+}
+
+func NewPrivatekeyFromString(str string) (*PrivateKey, error){
+	buf, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+
+	p := privateKeySerial{}
+	err = json.Unmarshal(buf, &p)
+	if err != nil {
+		return nil, err
+	}
+	return p.PrivateKey(), nil
+}
+
+func(p *PrivateKey)String() string {
+	pserial := NewPrivateKeySerial(p)
+	buf, _ := json.Marshal(pserial)
+
+	return base64.StdEncoding.EncodeToString(buf)
+}
+
 // PublicKey represents the public part of a Paillier key.
 type PublicKey struct {
-	N        *big.Int // modulus
+	NPub     *big.Int // modulus
 	G        *big.Int // n+1, since p and q are same length
 	NSquared *big.Int
+}
+
+func NewPubkeyFromString(str string) (*PublicKey, error) {
+	buf, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+
+	pub := PublicKey{}
+	err = json.Unmarshal(buf, &pub)
+	if err != nil {
+		return nil, err
+	}
+	return &pub, nil
+}
+
+func(p *PublicKey)String() string{
+	buf, _ := json.Marshal(p)
+
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 func h(p *big.Int, pp *big.Int, n *big.Int) *big.Int {
@@ -104,7 +193,7 @@ func Encrypt(pubKey *PublicKey, plainText []byte) ([]byte, error) {
 // addition, returns the nonce used during encryption. The passed plain text
 // MUST NOT be larger than the modulus of the passed public key.
 func EncryptAndNonce(pubKey *PublicKey, plainText []byte) ([]byte, *big.Int, error) {
-	r, err := rand.Int(rand.Reader, pubKey.N)
+	r, err := rand.Int(rand.Reader, pubKey.NPub)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -122,12 +211,12 @@ func EncryptAndNonce(pubKey *PublicKey, plainText []byte) ([]byte, *big.Int, err
 // larger than the modulus of the passed public key.
 func EncryptWithNonce(pubKey *PublicKey, r *big.Int, plainText []byte) (*big.Int, error) {
 	m := new(big.Int).SetBytes(plainText)
-	if pubKey.N.Cmp(m) < 1 { // N < m
+	if pubKey.NPub.Cmp(m) < 1 { // NPub < m
 		return nil, ErrMessageTooLong
 	}
 
 	// c = g^m * r^n mod n^2 = ((m*n+1) mod n^2) * r^n mod n^2
-	n := pubKey.N
+	n := pubKey.NPub
 	c := new(big.Int).Mod(
 		new(big.Int).Mul(
 			new(big.Int).Mod(new(big.Int).Add(one, new(big.Int).Mul(m, n)), pubKey.NSquared),

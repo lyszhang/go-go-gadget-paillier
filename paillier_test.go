@@ -37,7 +37,7 @@ func params1024() (*PrivateKey, error) {
 
 	pk := PrivateKey{
 		PublicKey: PublicKey{
-			N:        N,
+			NPub:     N,
 			NSquared: NSquared,
 			G:        G,
 		},
@@ -86,7 +86,7 @@ func params2048() (*PrivateKey, error) {
 
 	pk := PrivateKey{
 		PublicKey: PublicKey{
-			N:        N,
+			NPub:     N,
 			NSquared: NSquared,
 			G:        G,
 		},
@@ -136,7 +136,7 @@ func params3072() (*PrivateKey, error) {
 
 	pk := PrivateKey{
 		PublicKey: PublicKey{
-			N:        N,
+			NPub:     N,
 			NSquared: NSquared,
 			G:        G,
 		},
@@ -185,7 +185,7 @@ func params4096() (*PrivateKey, error) {
 
 	pk := PrivateKey{
 		PublicKey: PublicKey{
-			N:        N,
+			NPub:     N,
 			NSquared: NSquared,
 			G:        G,
 		},
@@ -410,25 +410,28 @@ func TestHomomorphicCipherTextAddition(t *testing.T) {
 		t.Fatalf("Unable to generate private key: %v", err)
 	}
 
+	buf := privKey.Bytes()
+	privNew, _ := NewPrivatekeyFromBytes(buf)
+
 	// Encrypt the integer 15.
 	m15 := new(big.Int).SetInt64(15)
-	c15, err := Encrypt(&privKey.PublicKey, m15.Bytes())
+	c15, err := Encrypt(&privNew.PublicKey, m15.Bytes())
 	if err != nil {
 		t.Fatalf("Unable to encrypt plain text: %v", err)
 	}
 
 	// Encrypt the integer 20.
 	m20 := new(big.Int).SetInt64(20)
-	c20, err := Encrypt(&privKey.PublicKey, m20.Bytes())
+	c20, err := Encrypt(&privNew.PublicKey, m20.Bytes())
 	if err != nil {
 		t.Fatalf("Unable to encrypt plain text: %v", err)
 	}
 
 	// Now homomorphically add the encrypted integers.
-	addedCiphers := AddCipher(&privKey.PublicKey, c15, c20)
+	addedCiphers := AddCipher(&privNew.PublicKey, c15, c20)
 
 	// When decrypted, the result should be 15+20 = 35
-	plaintext, err := Decrypt(privKey, addedCiphers)
+	plaintext, err := Decrypt(privNew, addedCiphers)
 	if err != nil {
 		t.Fatalf("Unable to decrypted cipher text: %v", err)
 	}
