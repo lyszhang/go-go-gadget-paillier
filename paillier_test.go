@@ -410,8 +410,8 @@ func TestHomomorphicCipherTextAddition(t *testing.T) {
 		t.Fatalf("Unable to generate private key: %v", err)
 	}
 
-	buf := privKey.Bytes()
-	privNew, _ := NewPrivatekeyFromBytes(buf)
+	buf := privKey.String()
+	privNew, _ := NewPrivatekeyFromString(buf)
 
 	// Encrypt the integer 15.
 	m15 := new(big.Int).SetInt64(15)
