@@ -15,7 +15,7 @@ import (
 	"math/big"
 )
 
-var limit  = big.NewInt(114823432545353)
+var limit  = big.NewInt(114823)
 
 type PrivateKey struct {
 	PublicKey

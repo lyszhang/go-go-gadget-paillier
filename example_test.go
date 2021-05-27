@@ -16,7 +16,7 @@ import (
 //   * Homomorphic multiplication with constant
 func TestAdd(t *testing.T) {
 	// Generate a 128-bit private key.
-	privKey, err := GenerateKey(rand.Reader, 128)
+	privKey, err := GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		fmt.Println(err)
 		return
